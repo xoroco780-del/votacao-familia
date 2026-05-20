@@ -65,33 +65,69 @@ const usuarios = [
   "Mauro",
 ];
 
+const perguntas = [
+  {
+    id: "pergunta1",
+
+    titulo: "Idade de início de pagamento:",
+
+    respostas: [
+      "26",
+      "28",
+      "30",
+    ],
+  },
+
+  {
+    id: "pergunta2",
+
+    titulo:
+      "Isenção para quem mora fora do Rio de Janeiro:",
+
+    respostas: [
+      "Não tem isenção",
+
+      "Isenção total",
+
+      "Isenção total, com uma contribuição anual de 10% do valor arrecadado no ano (hoje representa R$360,00)",
+    ],
+  },
+];
+
 const admin = "ADMIN123";
 
 export default function Home() {
   const [nome, setNome] = useState("");
+
   const [logado, setLogado] = useState(false);
+
   const [adminLogado, setAdminLogado] = useState(false);
+
   const [votou, setVotou] = useState(false);
 
-  const [p1, setP1] = useState("");
-  const [p2, setP2] = useState("");
-  const [p3, setP3] = useState("");
-
   const [resultados, setResultados] = useState<any[]>([]);
+
+  const [respostas, setRespostas] = useState<any>({});
 
   async function login() {
     if (nome === admin) {
       setAdminLogado(true);
+
       carregarResultados();
+
       return;
     }
 
     if (!usuarios.includes(nome)) {
       alert("Nome inválido");
+
       return;
     }
 
-    const q = query(collection(db, "votos"), where("nome", "==", nome));
+    const q = query(
+      collection(db, "votos"),
+      where("nome", "==", nome)
+    );
 
     const snapshot = await getDocs(q);
 
@@ -103,19 +139,24 @@ export default function Home() {
   }
 
   async function votar() {
-    if (!p1 || !p2 || !p3) {
+    const faltando = perguntas.some(
+      (p) => !respostas[p.id]
+    );
+
+    if (faltando) {
       alert("Responda todas as perguntas");
+
       return;
     }
 
-    const peso = nome.toLowerCase().includes("casa") ? 2.9 : 1;
+    const peso = nome.toLowerCase().includes("casa")
+      ? 2.9
+      : 1;
 
     await addDoc(collection(db, "votos"), {
       nome,
       peso,
-      pergunta1: p1,
-      pergunta2: p2,
-      pergunta3: p3,
+      respostas,
       criadoEm: new Date(),
     });
 
@@ -125,77 +166,66 @@ export default function Home() {
   }
 
   async function carregarResultados() {
-    const snapshot = await getDocs(collection(db, "votos"));
+    const snapshot = await getDocs(
+      collection(db, "votos")
+    );
 
-    const lista = snapshot.docs.map((doc) => doc.data());
+    const lista = snapshot.docs.map((doc) =>
+      doc.data()
+    );
 
     setResultados(lista);
   }
 
-  function calcular(pergunta: string) {
+  function calcular(perguntaId: string) {
     const total: any = {};
 
-    resultados.forEach((v) => {
-      const resposta = v[pergunta];
+    resultados.forEach((voto) => {
+      const resposta = voto.respostas?.[perguntaId];
+
+      if (!resposta) return;
 
       if (!total[resposta]) {
         total[resposta] = 0;
       }
 
-      total[resposta] += Number(v.peso);
+      total[resposta] += Number(voto.peso);
     });
 
     return total;
   }
 
   if (adminLogado) {
-    const r1 = calcular("pergunta1");
-    const r2 = calcular("pergunta2");
-    const r3 = calcular("pergunta3");
-
     return (
       <main className="min-h-screen bg-black text-white p-8">
-        <h1 className="text-4xl font-bold mb-8">
+        <h1 className="text-4xl font-bold mb-10">
           Resultados da Votação
         </h1>
 
-        <div className="space-y-10">
+        <div className="space-y-12">
 
-          <div>
-            <h2 className="text-2xl font-bold mb-4">
-              1 - Idade para iniciar contribuição
-            </h2>
+          {perguntas.map((pergunta) => {
+            const resultado = calcular(pergunta.id);
 
-            {Object.entries(r1).map(([k, v]) => (
-              <p key={k}>
-                {k}: {String(v)}
-              </p>
-            ))}
-          </div>
+            return (
+              <div key={pergunta.id}>
+                <h2 className="text-2xl font-bold mb-4">
+                  {pergunta.titulo}
+                </h2>
 
-          <div>
-            <h2 className="text-2xl font-bold mb-4">
-              2 - Isenção
-            </h2>
-
-            {Object.entries(r2).map(([k, v]) => (
-              <p key={k}>
-                {k}: {String(v)}
-              </p>
-            ))}
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold mb-4">
-              3 - Divisão da receita
-            </h2>
-
-            {Object.entries(r3).map(([k, v]) => (
-              <p key={k}>
-                {k}: {String(v)}
-              </p>
-            ))}
-          </div>
+                {Object.entries(resultado).map(
+                  ([resposta, valor]) => (
+                    <p
+                      key={resposta}
+                      className="mb-2 text-lg"
+                    >
+                      {resposta}: {String(valor)}
+                    </p>
+                  )
+                )}
+              </div>
+            );
+          })}
 
         </div>
       </main>
@@ -215,7 +245,9 @@ export default function Home() {
             className="w-full p-3 rounded bg-zinc-800 mb-4"
             placeholder="Digite seu nome"
             value={nome}
-            onChange={(e) => setNome(e.target.value)}
+            onChange={(e) =>
+              setNome(e.target.value)
+            }
           />
 
           <button
@@ -243,78 +275,45 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white p-8">
 
-      <div className="max-w-3xl mx-auto bg-zinc-900 p-8 rounded-2xl">
+      <div className="max-w-4xl mx-auto bg-zinc-900 p-8 rounded-2xl">
 
-        <h1 className="text-4xl font-bold mb-8 text-center">
+        <h1 className="text-4xl font-bold mb-10 text-center">
           Votação Familiar
         </h1>
 
-        <div className="space-y-10">
+        <div className="space-y-12">
 
-          <div>
-            <h2 className="text-xl font-bold mb-4">
-              1 - Qual a idade para iniciar a contribuição?
-            </h2>
+          {perguntas.map((pergunta) => (
+            <div key={pergunta.id}>
 
-            {["24", "26", "28", "30", "32"].map((x) => (
-              <label className="block mb-2" key={x}>
-                <input
-                  type="radio"
-                  name="p1"
-                  value={x}
-                  onChange={(e) => setP1(e.target.value)}
-                />{" "}
-                {x}
-              </label>
-            ))}
-          </div>
+              <h2 className="text-xl font-bold mb-4">
+                {pergunta.titulo}
+              </h2>
 
-          <div>
-            <h2 className="text-xl font-bold mb-4">
-              2 - Teremos algum tipo de isenção?
-            </h2>
+              {pergunta.respostas.map((resposta) => (
+                <label
+                  key={resposta}
+                  className="block mb-3"
+                >
+                  <input
+                    type="radio"
+                    name={pergunta.id}
+                    value={resposta}
+                    onChange={(e) =>
+                      setRespostas({
+                        ...respostas,
 
-            {[
-              "SEM ISENÇÃO",
-              "ISENÇÃO TOTAL - mora fora do RJ",
-              "ISENÇÃO PARCIAL - 10%",
-              "ISENÇÃO PARCIAL - 20% Brasil e 10% exterior",
-            ].map((x) => (
-              <label className="block mb-2" key={x}>
-                <input
-                  type="radio"
-                  name="p2"
-                  value={x}
-                  onChange={(e) => setP2(e.target.value)}
-                />{" "}
-                {x}
-              </label>
-            ))}
-          </div>
+                        [pergunta.id]:
+                          e.target.value,
+                      })
+                    }
+                  />{" "}
+                  {resposta}
+                </label>
+              ))}
 
-          <div>
-            <h2 className="text-xl font-bold mb-4">
-              3 - Divisão da receita
-            </h2>
-
-            {[
-              "100% casas",
-              "70% casas e 30% pessoas",
-              "50% casas e 50% pessoas",
-              "30% casas e 70% pessoas",
-              "100% pessoas",
-            ].map((x) => (
-              <label className="block mb-2" key={x}>
-                <input
-                  type="radio"
-                  name="p3"
-                  value={x}
-                  onChange={(e) => setP3(e.target.value)}
-                />{" "}
-                {x}
-              </label>
-            ))}
-          </div>
+            </div>
+          ))}
 
           <button
             onClick={votar}
