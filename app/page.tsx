@@ -75,26 +75,11 @@ const perguntas = [
     titulo: "Idade de início de pagamento:",
 
     respostas: [
-      "26",
       "28",
       "30",
     ],
   },
 
-  {
-    id: "pergunta2",
-
-    titulo:
-      "Isenção para quem mora fora do Rio de Janeiro:",
-
-    respostas: [
-      "Não tem isenção",
-
-      "Isenção total",
-
-      "Isenção total, com uma contribuição anual de 10% do valor arrecadado no ano (hoje representa R$360,00)",
-    ],
-  },
 ];
 
 const admin = "ADMIN123";
