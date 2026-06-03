@@ -77,7 +77,7 @@ const perguntas = [
     respostas: [
       " casa 30% do valor total necessário e pessoas 70%",
       " casa 50% do valor total necessário e pessoas 50%",
-      " casa 70%do valor total necessário e pessoas 30%" ,
+       ,
     ],
   },
 
